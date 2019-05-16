@@ -1,0 +1,27 @@
+{
+  "name": "twist-dl-moe",
+  "version": "1.0.0",
+  "description": "Simple tool to download anime from Twist.moe",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "twist.moe",
+    "anime",
+    "download",
+    "downloader"
+  ],
+  "author": "vignedev",
+  "license": "MIT",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1",
+    "enquirer": "^2.3.0",
+    "node-fetch": "^2.6.0",
+    "progress": "^2.0.3"
+  },
+  "bin": {
+    "twistmoe": "./bin/twistmoe"
+  }
+}
