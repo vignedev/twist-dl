@@ -5,7 +5,8 @@ const
     { AutoComplete, MultiSelect } = require('enquirer'),
     ProgressBar = require('progress'),
     { basename } = require('path'),
-    fs = require('fs')
+    fs = require('fs'),
+    argv = require('minimist')(process.argv.slice(2))
     
 const
     baseUrl = 'https://twist.moe',
@@ -22,6 +23,7 @@ const
         acc[`Episode ${val.number}`] = val
         return acc
     }, {})
+    
     const pickedEpisodes = (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
         name: 'episodes', message: 'Select episodes:', limit: 24,
         choices: Object.keys(sources)
@@ -32,6 +34,7 @@ const
     }
 })()
 
+/* Helper Functions */
 function getJSON(endpoint){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + endpoint, {
