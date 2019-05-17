@@ -1,4 +1,4 @@
-# twist-cli
+# twist-dl
 Simple twist.moe anime downloader
 
 ## Installation
