@@ -14,8 +14,19 @@ const
 const
     baseUrl = 'https://twist.moe',
     aesKey = "k8B$B@0L8D$tDYHGmRg98sQ7!%GOEGOX27T",
-    accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR"
+    accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
+    userAgent = `twist-cli/${require('./package.json').version}`
 
+if (typeof (argv.anime) === 'undefined' || typeof (argv.episode) === 'undefined'){
+    console.error(`Usage: twistmoe -a <anime name> -e <episode> [-o <output>]
+
+Options:
+
+  -a, --anime       Name of the anime, can be partial
+  -e, --episode     Which episode to download (1 = episode 1)
+  -o, --output      Folder in which it'll be downloaded in, use - to output to stdout`)
+    process.exit(1)
+}
 
 ;(async() => {
     try{
@@ -39,6 +50,9 @@ const
         })).run()).map(x => sources[x])
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
+            console.log(decryptSource(pickedEpisodes[i].source))
+
+            process.exit()
             if(argv.output == '-')
                 await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
             else
@@ -53,7 +67,7 @@ const
 function getJSON(endpoint){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + endpoint, {
-            headers:{'x-access-token':accessToken,'user-agent':'twist-cli/0.1'}
+            headers: { 'x-access-token': accessToken, 'user-agent': userAgent}
         }).then(res => res.json()).then(resolve).catch(reject)
     })
 }
@@ -62,7 +76,7 @@ function decryptSource(source){
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
-        fetch(baseUrl + url).then(res => {
+        fetch(baseUrl + url, { headers: { 'user-agent': userAgent} }).then(res => {
             let progress = new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
