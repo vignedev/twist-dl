@@ -5,19 +5,20 @@ const
     fetch = require('node-fetch'),
     { AutoComplete, MultiSelect } = require('enquirer'),
     ProgressBar = require('progress'),
-    { basename, resolve } = require('path'),
+    path = require('path'),
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
-        anime: 'a', episode: 'e', output: 'o'
+        anime: 'a', episode: 'e', output: 'o', help: 'h'
     }})
     
 const
     baseUrl = 'https://twist.moe',
     aesKey = "k8B$B@0L8D$tDYHGmRg98sQ7!%GOEGOX27T",
     accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
-    userAgent = `twist-cli/${require('./package.json').version}`
+    userAgent = `twist-cli/${require('./package.json').version}`,
+    interactive = typeof (argv.anime) === typeof (argv.episode)
 
-if (typeof (argv.anime) === 'undefined' || typeof (argv.episode) === 'undefined'){
+if (!interactive || argv.help){
     console.error(`Usage: twistmoe -a <anime name> -e <episode> [-o <output>]
 
 Options:
@@ -43,16 +44,13 @@ Options:
         }, {})
 
         let source = sources[`Episode ${argv.episode}`]
-        if (!source) throw new Error('Episode not available.')
+        if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
         const pickedEpisodes = argv.episode ? [source] : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: 'Select episodes:', limit: 24,
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
-            console.log(decryptSource(pickedEpisodes[i].source))
-
-            process.exit()
             if(argv.output == '-')
                 await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
             else
@@ -80,7 +78,7 @@ function downloadWithFancyProgressbar(url, text){
             let progress = new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
-            const dest = fs.createWriteStream(`${resolve(process.cwd(), argv.output || '')}/${basename(url)}`)
+            const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
             res.body.pipe(dest)
 
             res.body.on('data', chunk => progress.tick(chunk.length))
