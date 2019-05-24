@@ -15,11 +15,11 @@ const
     baseUrl = 'https://twist.moe',
     aesKey = "k8B$B@0L8D$tDYHGmRg98sQ7!%GOEGOX27T",
     accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
-    userAgent = `twist-cli/${require('./package.json').version}`,
+    userAgent = `twist-dl/${require('./package.json').version}`,
     interactive = typeof (argv.anime) === typeof (argv.episode)
 
 if (!interactive || argv.help){
-    console.error(`Usage: twistmoe -a <anime name> -e <episode> [-o <output>]
+    console.error(`Usage: twist-dl -a <anime name> -e <episode> [-o <output>]
 
 Options:
 

@@ -22,6 +22,6 @@
     "progress": "^2.0.3"
   },
   "bin": {
-    "twistmoe": "./bin/twistmoe"
+    "twist-dl": "./bin/twist-dl"
   }
 }
