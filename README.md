@@ -12,9 +12,9 @@ npm i twist-dl -g
 
 ### Interactive CLI
 ```bash
-$ twistmoe
+$ twist-dl
 ```
-Just type `twistmoe` to your terminal/cmd.
+Just type `twist-dl` to your terminal/cmd.
 
 This will launch a simple interface that can be easily controlled via arrow keys, space and enter.
 
@@ -22,8 +22,8 @@ Anime list and sources are directly fetched from twist.moe. It will download int
 
 ### With arguments
 ```
-$ twistmoe -h
-Usage: twistmoe -a <anime name> -e <episode> [-o <output>]
+$ twist-dl -h
+Usage: twist-dl -a <anime name> -e <episode> [-o <output>]
 
 Options:
 
@@ -33,8 +33,8 @@ Options:
 ```
 #### Examples
 ```bash
-$ twistmoe -a "yuyushiki" -e latest
-$ twistmoe https://twist.moe/a/yuyushiki/12
+$ twist-dl -a "yuyushiki" -e latest
+$ twist-dl https://twist.moe/a/yuyushiki/12
 ```
 
 ## Disclaimer
