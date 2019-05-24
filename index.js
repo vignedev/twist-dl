@@ -25,7 +25,8 @@ Options:
 
   -a, --anime       Name of the anime, can be partial
   -e, --episode     Which episode to download (1 = episode 1)
-  -o, --output      Folder in which it'll be downloaded in, use - to output to stdout`)
+  -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
+  -h, --help        Displays this message`)
     process.exit(1)
 }
 
