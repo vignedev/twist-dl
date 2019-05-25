@@ -18,6 +18,7 @@
   "dependencies": {
     "crypto-js": "^3.1.9-1",
     "enquirer": "^2.3.0",
+    "minimist": "^1.2.0",
     "node-fetch": "^2.6.0",
     "progress": "^2.0.3"
   },
