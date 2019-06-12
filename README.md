@@ -21,8 +21,12 @@ This will launch a simple interface that can be easily controlled via arrow keys
 Anime list and sources are directly fetched from twist.moe. It will download into your currently working directory under the same filename as it is on their servers.
 
 ### With arguments
-```
+
+You can also download anime via CLI if that's what you prefer. Down below you can see the help message.
+```bash
 $ twist-dl -h
+```
+```
 Usage: twist-dl -a <anime name> -e <episode> [-o <output>]
 
 Options:
@@ -30,17 +34,22 @@ Options:
   -a, --anime       Name of the anime, can be partial
   -e, --episode     Which episode to download (1 = episode 1)
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
+  -h, --help        Displays this message
+  -s, --silent      Surpress any (except of donation message) output
 ```
 #### Examples
 ```bash
-$ twist-dl -a "yuyushiki" -e latest
+$ twist-dl -a "yuyushiki" -e latest                 # Download latest episode of Yuyushiki
+$ twist-dl -a "yuyushiki" -e 12                     # Download 12th episode
+$ twist-dl -a "yuyushiki" -e 12 -o -                # Pipe the 12th episode into stdout (transcoding purposes etc.)
+$ twist-dl -a "yuyushiki" -e 12 -o "./yyshk12.mp4"  # Download 12th episode as yyshk12.mp4
 ```
 
 ## Disclaimer
 
 `todo: disclaimer`
 
-Long story short, it's for educational purposes only. If you like the program, please *donate to the Twist.Moe admins* so they can keep the servers up and running.
+Long story short, it's for educational purposes only. If you like the program, please ***donate to the Twist.Moe admins*** so they can keep the servers up and running.
 
 ## License
 
