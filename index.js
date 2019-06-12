@@ -8,7 +8,7 @@ const
     path = require('path'),
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
-        anime: 'a', episode: 'e', output: 'o', help: 'h'
+        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's'
     }})
     
 const
@@ -26,7 +26,8 @@ Options:
   -a, --anime       Name of the anime, can be partial
   -e, --episode     Which episode to download (1 = episode 1)
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
-  -h, --help        Displays this message`)
+  -h, --help        Displays this message
+  -s, --silent      Surpress any (except of donation message) output`)
     process.exit(1)
 }
 
@@ -44,12 +45,14 @@ Options:
             return acc
         }, {})
 
-        let source = sources[`Episode ${argv.episode}`]
+        let source = argv.episode == 'latest' ? sources[Object.keys(sources).pop()] : sources[`Episode ${argv.episode}`]
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
         const pickedEpisodes = argv.episode ? [source] : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: 'Select episodes:', limit: 24,
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
+
+        console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running! \n`)
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
             if(argv.output == '-')
@@ -67,7 +70,10 @@ function getJSON(endpoint){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + endpoint, {
             headers: { 'x-access-token': accessToken, 'user-agent': userAgent}
-        }).then(res => res.json()).then(resolve).catch(reject)
+        }).then(res => {
+            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
+            return res.json()
+        }).then(resolve).catch(reject)
     })
 }
 function decryptSource(source){
@@ -76,7 +82,8 @@ function decryptSource(source){
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + url, { headers: { 'user-agent': userAgent} }).then(res => {
-            let progress = new ProgressBar(text, {
+            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
+            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
             const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
@@ -91,6 +98,7 @@ function downloadWithFancyProgressbar(url, text){
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + url).then(res => {
+            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
             res.body.on('error', reject)

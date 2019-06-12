@@ -34,7 +34,6 @@ Options:
 #### Examples
 ```bash
 $ twist-dl -a "yuyushiki" -e latest
-$ twist-dl https://twist.moe/a/yuyushiki/12
 ```
 
 ## Disclaimer
