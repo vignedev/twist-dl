@@ -27,7 +27,7 @@ Options:
   -e, --episode     Which episode to download (1 = episode 1)
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
   -h, --help        Displays this message
-  -s, --silent      Surpress any (except of donation message) output`)
+  -s, --silent      Suppress any (except of donation message) output`)
     process.exit(1)
 }
 
