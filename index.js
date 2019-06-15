@@ -3,6 +3,7 @@ const
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
+    url = require('url'),
     { AutoComplete, MultiSelect } = require('enquirer'),
     ProgressBar = require('progress'),
     path = require('path'),
@@ -16,10 +17,10 @@ const
     aesKey = "k8B$B@0L8D$tDYHGmRg98sQ7!%GOEGOX27T",
     accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
     userAgent = `twist-dl/${require('./package.json').version}`,
-    interactive = typeof (argv.anime) === typeof (argv.episode)
+    interactive = typeof (argv.anime) === typeof (argv.episode) || argv._.length == 0
 
 if (!interactive || argv.help){
-    console.error(`Usage: twist-dl -a <anime name> -e <episode> [-o <output>]
+    console.error(`Usage: twist-dl -a <anime name> -e <episode> [-o <output>] [url]
 
 Options:
 
@@ -33,8 +34,18 @@ Options:
 
 ;(async() => {
     try{
+        if(argv._.length !== 0 && argv._[0].includes('twist.moe/a/')){
+            const { pathname } = url.parse(argv._[0])
+            const [, type, anime, episode ] = pathname.split('/')
+            console.log(type,anime,episode)
+            if(type !== 'a' || typeof(anime) === 'undefined' || typeof(episode) === 'undefined') throw new Error('Invalid URL')
+
+            argv.anime = anime
+            if(typeof(argv.episode) === 'undefined') argv.episode = episode
+        }
+
         const animeList = await getJSON('/api/anime')
-        const selectedAnime = argv.anime ? animeList.find(x => x.title.toLowerCase().includes(argv.anime.toLowerCase())) : await (new AutoComplete({
+        const selectedAnime = argv.anime ? animeList.find(x => x.slug.slug.includes(argv.anime.toLowerCase()) || x.title.toLowerCase().includes(argv.anime.toLowerCase())) : await (new AutoComplete({
             name: 'anime', message: 'Pick your anime:', limit: 10,
             choices: animeList.map(x => ({ name: x.title, value: x }))
         })).run()

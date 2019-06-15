@@ -43,6 +43,7 @@ $ twist-dl -a "yuyushiki" -e latest                 # Download latest episode of
 $ twist-dl -a "yuyushiki" -e 12                     # Download 12th episode
 $ twist-dl -a "yuyushiki" -e 12 -o -                # Pipe the 12th episode into stdout (transcoding purposes etc.)
 $ twist-dl -a "yuyushiki" -e 12 -o "./yyshk12.mp4"  # Download 12th episode as yyshk12.mp4
+$ twist-dl https://twist.moe/a/yuyushiki/12         # Download 12th episode
 ```
 
 ## Disclaimer
