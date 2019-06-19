@@ -48,9 +48,9 @@ $ twist-dl https://twist.moe/a/yuyushiki/12         # Download 12th episode
 
 ## Disclaimer
 
-`todo: disclaimer`
+twist-dl nor vignedev are **not** affiliated with twist.moe.
 
-Long story short, it's for educational purposes only. If you like the program, please ***donate to the Twist.Moe admins*** so they can keep the servers up and running.
+This program is made for personal-use only. If you like the program, please ***donate to the Twist.Moe admins*** so they can keep the servers up and running.
 
 ## License
 

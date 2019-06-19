@@ -34,10 +34,10 @@ Options:
 
 ;(async() => {
     try{
+        // if link is present
         if(argv._.length !== 0 && argv._[0].includes('twist.moe/a/')){
             const { pathname } = url.parse(argv._[0])
             const [, type, anime, episode ] = pathname.split('/')
-            console.log(type,anime,episode)
             if(type !== 'a' || typeof(anime) === 'undefined' || typeof(episode) === 'undefined') throw new Error('Invalid URL')
 
             argv.anime = anime
