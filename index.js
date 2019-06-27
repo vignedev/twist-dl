@@ -1,5 +1,5 @@
 const
-    { red, yellow } = require('ansi-colors'),
+    { red, yellow, cyan } = require('ansi-colors'),
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
@@ -56,16 +56,17 @@ Options:
             return acc
         }, {})
 
-        let source = argv.episode == 'latest' ? sources[Object.keys(sources).pop()] : (argv.episode && typeof(argv.episode) == 'string' && argv.episode.includes(`-`) ? getArrayOfEpisodes(argv.episodes).map(x=>sources[x]) : sources[`Episode ${argv.episode}`])
+        let source = argv.episode == 'latest' ? sources[Object.keys(sources).pop()] : sources[`Episode ${argv.episode}`]
+            
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
-
-        const pickedEpisodes = argv.episode ? [source] : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
-            name: 'episodes', message: 'Select episodes:', limit: 24,
+        //(argv.episode && typeof(argv.episode) == 'string' && argv.episode.includes(`-`) ? getArrayOfEpisodes(argv.episode).map(x=>sources[x]) : sources[`Episode ${argv.episode}`])
+        const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
+            name: 'episodes', message: 'Select episodes:', /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
 
         // use console.error so we don't write to stdout but stderr (in case of piping)
-        console.error(`  twist-dl is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
+        console.error(`\n  ${cyan('twist-dl')} is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
         console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running! \n`)
         console.error(`  ${yellow(selectedAnime.title)}\n`)
 
@@ -120,8 +121,8 @@ function downloadAndPipeIntoStdout(url){
         }).catch(reject)
     })
 }
-function getArrayOfEpisodes(input){
+function getArrayOfEpisodes(source, input){
     const [ start, end ] = input.split(`-`)
     if(start >= end) throw new Error('End point is smaller than start point')
-    return Array(end-start+1).fill().map((x,i) => `Episode ${i+1}`)
+    return Array(end-start+1).fill().map((x,i) => source[`Episode ${parseInt(start)+i}`])
 }
