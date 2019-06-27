@@ -39,11 +39,12 @@ Options:
 ```
 #### Examples
 ```bash
-$ twist-dl -a "yuyushiki" -e latest                 # Download latest episode of Yuyushiki
-$ twist-dl -a "yuyushiki" -e 12                     # Download 12th episode
-$ twist-dl -a "yuyushiki" -e 12 -o -                # Pipe the 12th episode into stdout (transcoding purposes etc.)
-$ twist-dl -a "yuyushiki" -e 12 -o "./yyshk"        # Download 12th episode into "yyshk" folder
-$ twist-dl https://twist.moe/a/yuyushiki/12         # Download 12th episode
+$ twist-dl -a "yuyushiki" -e latest           # Download latest episode of Yuyushiki
+$ twist-dl -a "yuyushiki" -e 12               # Download 12th episode
+$ twist-dl -a "yuyushiki" -e 12 -o -          # Pipe the 12th episode into stdout (transcoding purposes etc.)
+$ twist-dl -a "yuyushiki" -e 1-12             # Download everything from episode 1 to 12
+$ twist-dl -a "yuyushiki" -e 12 -o "./yyshk"  # Download 12th episode into "yyshk" folder
+$ twist-dl https://twist.moe/a/yuyushiki/12   # Download 12th episode
 ```
 
 ## Disclaimer
