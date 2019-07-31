@@ -1,5 +1,5 @@
 const
-    { red, yellow, cyan } = require('ansi-colors'),
+    { red, yellow, cyan, green } = require('ansi-colors'),
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
@@ -10,14 +10,16 @@ const
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
         anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's'
-    }})
+    }}),
+    aesfetch = require('./lib/aesfetch.js')
     
 const
     baseUrl = 'https://twist.moe',
-    aesKey = "LXgIVP&PorO68Rq7dTx8N^lP!Fa5sGJ^*XK",
     accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
     userAgent = `twist-dl/${require('./package.json').version}`,
     interactive = typeof (argv.anime) === typeof (argv.episode) || argv._.length == 0
+
+let aesKey = "LXgIVP&PorO68Rq7dTx8N^lP!Fa5sGJ^*XK"
 
 if (!interactive || argv.help){
     console.error(`Usage: twist-dl -a <anime name> -e <episode> [-o <output>] [url]
@@ -51,6 +53,7 @@ Options:
         })).run()
 
         const sourceList = await getJSON(`/api/anime/${selectedAnime.slug.slug}/sources`)
+
         const sources = sourceList.reduce((acc, val) => {
             acc[`Episode ${val.number}`] = val
             return acc
@@ -72,9 +75,9 @@ Options:
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
             if(argv.output == '-')
-                await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
+                await downloadAndPipeIntoStdout(await decryptSource(pickedEpisodes[i].source))
             else
-                await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
+                await downloadWithFancyProgressbar(await decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
         }
     }catch(err){
         console.error(red('error: '), err)
@@ -92,8 +95,26 @@ function getJSON(endpoint){
         }).then(resolve).catch(reject)
     })
 }
-function decryptSource(source){
-    return aes.decrypt(source, aesKey).toString(crypto.enc.Utf8)
+async function decryptSource(source, attempt = 0){
+    let decrypted = aes.decrypt(source, aesKey).toString(crypto.enc.Utf8)
+    if(decrypted == ""){
+        if(attempt > 1){
+            console.error(`  ${red('error')}: Failed to retrieve AES key... Exiting...`)
+            process.exit(1)
+        }
+        console.error(`  ${red('error')}: Failed to decrypt URL, attempting to retrieve new AES key...`)
+        try{
+            aesKey = await aesfetch.getAESkey(userAgent)
+            console.error(`  ${green('success')}: Retrieved new AES key, retrying...`)
+            return decryptSource(source, ++attempt)
+        }catch(err){
+            console.error(err)
+            console.error(`  ${red('error')}: Failed to retrieve AES key... Exiting...`)
+            process.exit(1)
+        }
+    }else{
+        return decrypted
+    }
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
@@ -104,7 +125,6 @@ function downloadWithFancyProgressbar(url, text){
             })
             const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
             res.body.pipe(dest)
-
             res.body.on('data', chunk => progress.tick(chunk.length))
             res.body.on('end', resolve)
             res.body.on('error', reject)
