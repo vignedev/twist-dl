@@ -60,7 +60,7 @@ Options:
             
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
         //(argv.episode && typeof(argv.episode) == 'string' && argv.episode.includes(`-`) ? getArrayOfEpisodes(argv.episode).map(x=>sources[x]) : sources[`Episode ${argv.episode}`])
-        const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
+        const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: 'Select episodes:', /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
