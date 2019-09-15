@@ -123,6 +123,6 @@ function downloadAndPipeIntoStdout(url){
 }
 function getArrayOfEpisodes(source, input){
     const [ start, end ] = input.split(`-`)
-    if(start >= end) throw new Error('End point is smaller than start point')
+    if(parseInt(start, 10) >= parseInt(end, 10)) throw new Error('End point is smaller than start point')
     return Array(end-start+1).fill().map((x,i) => source[`Episode ${parseInt(start)+i}`])
 }
