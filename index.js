@@ -93,7 +93,7 @@ function getJSON(endpoint){
     })
 }
 function decryptSource(source){
-    return aes.decrypt(source, aesKey).toString(crypto.enc.Utf8)
+    return aes.decrypt(source, aesKey).toString(crypto.enc.Utf8).trim()
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
