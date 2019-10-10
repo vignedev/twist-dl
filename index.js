@@ -59,7 +59,7 @@ Options:
         let source = argv.episode == 'latest' ? sources[Object.keys(sources).pop()] : sources[`Episode ${argv.episode}`]
             
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
-        //(argv.episode && typeof(argv.episode) == 'string' && argv.episode.includes(`-`) ? getArrayOfEpisodes(argv.episode).map(x=>sources[x]) : sources[`Episode ${argv.episode}`])
+
         const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: 'Select episodes:', /*limit: 24,*/
             choices: Object.keys(sources)
@@ -71,10 +71,14 @@ Options:
         console.error(`  ${yellow(selectedAnime.title)}\n`)
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
-            if(argv.output == '-')
-                await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
-            else
-                await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
+            try{
+                if(argv.output == '-')
+                    await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
+                else
+                    await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
+            }catch(err){
+                console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i].number}\n`,err)
+            }
         }
     }catch(err){
         console.error(red('error: '), err)
@@ -87,7 +91,7 @@ function getJSON(endpoint){
         fetch(baseUrl + endpoint, {
             headers: { 'x-access-token': accessToken, 'user-agent': userAgent}
         }).then(res => {
-            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
+            if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             return res.json()
         }).then(resolve).catch(reject)
     })
@@ -98,7 +102,7 @@ function decryptSource(source){
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + url, { headers: { 'user-agent': userAgent} }).then(res => {
-            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
+            if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
@@ -114,15 +118,30 @@ function downloadWithFancyProgressbar(url, text){
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + url).then(res => {
-            if(!res.ok) return reject(`Server didn't respond with 200 (${res.statusText})`)
+            if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
             res.body.on('error', reject)
         }).catch(reject)
     })
 }
+
 function getArrayOfEpisodes(source, input){
-    const [ start, end ] = input.split(`-`)
-    if(parseInt(start, 10) >= parseInt(end, 10)) throw new Error('End point is smaller than start point')
-    return Array(end-start+1).fill().map((x,i) => source[`Episode ${parseInt(start)+i}`])
+    const rawEpisodes = input.split(',').map(x => parseRange(x.trim())).reduce((acc,val) => acc.concat(...val), [])
+    const uniqueEpisodes = uniqueArray(rawEpisodes.sort()).map(x => `Episode ${x}`)
+
+    return uniqueEpisodes.map(x => source[x])
+
+    function parseRange(range){
+        const [ start, end ] = range.split(`-`)
+        if(typeof(end) === 'undefined') return [start]
+        if(parseInt(start, 10) >= parseInt(end, 10)) throw new Error('End point is smaller than start point')
+        return Array(end-start+1).fill().map((x,i) => parseInt(start)+i)
+    }
+}
+
+function uniqueArray(array){
+    const filter = {}
+    array.forEach(x => filter[x] = null)
+    return Object.keys(filter)
 }
