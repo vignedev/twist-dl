@@ -89,7 +89,7 @@ Options:
 function getJSON(endpoint){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + endpoint, {
-            headers: { 'x-access-token': accessToken, 'user-agent': userAgent}
+            headers: { 'x-access-token': accessToken, 'user-agent': userAgent }
         }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             return res.json()
@@ -101,7 +101,7 @@ function decryptSource(source){
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
-        fetch(baseUrl + url, { headers: { 'user-agent': userAgent} }).then(res => {
+        fetch(baseUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
@@ -117,7 +117,7 @@ function downloadWithFancyProgressbar(url, text){
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetch(baseUrl + url).then(res => {
+        fetch(baseUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
