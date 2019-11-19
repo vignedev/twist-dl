@@ -36,6 +36,7 @@ Options:
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
   -h, --help        Displays this message
   -s, --silent      Suppress any (except of donation message) output
+  -E, --english     Search anime names using English titles
 ```
 #### Examples
 ```bash
