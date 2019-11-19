@@ -9,7 +9,7 @@ const
     path = require('path'),
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
-        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's'
+        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's', english: 'E'
     }})
     
 const
@@ -28,7 +28,8 @@ Options:
   -e, --episode     Which episode to download (1 = episode 1)
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
   -h, --help        Displays this message
-  -s, --silent      Suppress any (except of donation message) output`)
+  -s, --silent      Suppress any (except of donation message) output
+  -E, --english    Search anime names using English titles`)
     process.exit(1)
 }
 
@@ -45,9 +46,9 @@ Options:
         }
 
         const animeList = await getJSON('/api/anime')
-        const selectedAnime = argv.anime ? animeList.find(x => x.slug.slug.includes(argv.anime.toLowerCase()) || x.title.toLowerCase().includes(argv.anime.toLowerCase())) : await (new AutoComplete({
+        const selectedAnime = argv.anime ? animeList.find(x => x.slug.slug.includes(argv.anime.toLowerCase()) || getTitle(x).toLowerCase().includes(argv.anime.toLowerCase())) : await (new AutoComplete({
             name: 'anime', message: 'Pick your anime:', limit: 10,
-            choices: animeList.map(x => ({ name: x.title, value: x }))
+            choices: animeList.map(x => ({ name: getTitle(x), value: x }))
         })).run()
 
         const sourceList = await getJSON(`/api/anime/${selectedAnime.slug.slug}/sources`)
@@ -61,14 +62,14 @@ Options:
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
 
         const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
-            name: 'episodes', message: 'Select episodes:', /*limit: 24,*/
+            name: 'episodes', message: `Select episodes: (${getTitle(selectedAnime)})`, /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
 
         // use console.error so we don't write to stdout but stderr (in case of piping)
         console.error(`\n  ${cyan('twist-dl')} is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
         console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running! \n`)
-        console.error(`  ${yellow(selectedAnime.title)}\n`)
+        console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
             try{
@@ -86,6 +87,11 @@ Options:
 })()
 
 /* Helper Functions */
+function getTitle(anime){
+    // fallback title, alt_title may be null
+    return (argv.english ? anime.alt_title : anime.title) || anime.title
+}
+
 function getJSON(endpoint){
     return new Promise((resolve,reject) => {
         fetch(baseUrl + endpoint, {
