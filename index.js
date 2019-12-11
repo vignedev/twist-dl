@@ -46,7 +46,7 @@ Options:
         }
 
         const animeList = await getJSON('/api/anime')
-        const selectedAnime = argv.anime ? animeList.find(x => x.slug.slug.includes(argv.anime.toLowerCase()) || getTitle(x).toLowerCase().includes(argv.anime.toLowerCase())) : await (new AutoComplete({
+        const selectedAnime = argv.anime ? findCorrectAnime(animeList, argv.anime.toLowerCase()) : await (new AutoComplete({
             name: 'anime', message: 'Pick your anime:', limit: 10,
             choices: animeList.map(x => ({ name: getTitle(x), value: x }))
         })).run()
@@ -150,4 +150,11 @@ function uniqueArray(array){
     const filter = {}
     array.forEach(x => filter[x] = null)
     return Object.keys(filter)
+}
+
+function findCorrectAnime(animeList, anime){
+    // if the animeslug/title matches the request, return that one
+    // if not, return whichever contains the request
+    return animeList.find(x => x.slug.slug == anime || getTitle(x).toLowerCase() == anime) ||
+        animeList.find(x => x.slug.slug.includes(anime) || getTitle(x).toLowerCase().includes(anime))
 }
