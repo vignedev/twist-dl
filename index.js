@@ -78,7 +78,7 @@ Options:
                 else
                     await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
             }catch(err){
-                console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i].number}\n`,err)
+                console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
             }
         }
     }catch(err){
