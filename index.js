@@ -68,7 +68,11 @@ Options:
 
         // use console.error so we don't write to stdout but stderr (in case of piping)
         console.error(`\n  ${cyan('twist-dl')} is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
-        console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running! \n`)
+        console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running!`)
+        try{
+            const donation = await getJSON('/api/donation')
+            console.error(`\n  They're ${red(donation.remaining + '$ short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
+        }catch(err){}
         console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
@@ -107,8 +111,7 @@ function decryptSource(source){
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
-        fetch(baseUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
-            if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
+        fetch(getCDNserver() + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
@@ -123,7 +126,7 @@ function downloadWithFancyProgressbar(url, text){
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetch(baseUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
+        fetch(getCDNserver() + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
@@ -157,4 +160,9 @@ function findCorrectAnime(animeList, anime){
     // if not, return whichever contains the request
     return animeList.find(x => x.slug.slug == anime || getTitle(x).toLowerCase() == anime) ||
         animeList.find(x => x.slug.slug.includes(anime) || getTitle(x).toLowerCase().includes(anime))
+}
+
+function getCDNserver(){
+    // twist.moe uses cdn from edge-1 to edge-39
+    return `https://edge-${Math.floor(Math.random()*39)+1}.cdn.bunny.sh`
 }
