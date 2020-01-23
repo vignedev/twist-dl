@@ -127,7 +127,7 @@ function downloadWithFancyProgressbar(url, text){
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetch(getCDNserver() + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
+        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
