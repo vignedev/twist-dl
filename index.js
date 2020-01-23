@@ -14,6 +14,7 @@ const
     
 const
     baseUrl = 'https://twist.moe',
+    cdnUrl = 'https://twistcdn.bunny.sh',
     aesKey = "LXgIVP&PorO68Rq7dTx8N^lP!Fa5sGJ^*XK",
     accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
     userAgent = `twist-dl/${require('./package.json').version}`,
@@ -111,7 +112,7 @@ function decryptSource(source){
 }
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
-        fetch(getCDNserver() + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
+        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
@@ -160,9 +161,4 @@ function findCorrectAnime(animeList, anime){
     // if not, return whichever contains the request
     return animeList.find(x => x.slug.slug == anime || getTitle(x).toLowerCase() == anime) ||
         animeList.find(x => x.slug.slug.includes(anime) || getTitle(x).toLowerCase().includes(anime))
-}
-
-function getCDNserver(){
-    // twist.moe uses cdn from edge-1 to edge-39
-    return `https://edge-${Math.floor(Math.random()*39)+1}.cdn.bunny.sh`
 }
