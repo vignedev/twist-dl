@@ -72,7 +72,7 @@ Options:
         console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running!`)
         try{
             const donation = await getJSON('/api/donation')
-            console.error(`\n  They're ${red(donation.remaining + '$ short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
+            console.error(`\n  They're ${red(Math.round((donation.remaining + Number.EPSILON)*100)/100 + '$ short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
         }catch(err){}
         console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
         if(!(fs.existsSync(path.resolve(process.cwd(), argv.output || '')))){
