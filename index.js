@@ -75,9 +75,7 @@ Options:
             console.error(`\n  They're ${red(Math.round((donation.remaining + Number.EPSILON)*100)/100 + '$ short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
         }catch(err){}
         console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
-        if(!(fs.existsSync(path.resolve(process.cwd(), argv.output || '')))){
-            fs.mkdirSync(path.resolve(process.cwd(), argv.output || ''));
-        }
+        fs.mkdirSync(path.resolve(process.cwd(), argv.output || ''), { recursive: true });
         for (let i = 0; i < pickedEpisodes.length; i++) {
             try{
                 if(argv.output == '-')
