@@ -1,6 +1,6 @@
 {
   "name": "twist-dl",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Simple tool to download anime from Twist.moe",
   "main": "index.js",
   "scripts": {
