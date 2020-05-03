@@ -81,7 +81,7 @@ Options:
                 if(argv.output == '-')
                     await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
                 else
-                    await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
+                    await downloadWithFancyProgressbarRecursive(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
             }catch(err){
                 console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
             }
@@ -110,18 +110,47 @@ function getJSON(endpoint){
 function decryptSource(source){
     return aes.decrypt(source, aesKey).toString(crypto.enc.Utf8).trim()
 }
+
+function downloadWithFancyProgressbarRecursive(url, text) {
+    return new Promise(function(resolve, reject) {
+        downloadWithFancyProgressbar(url, text).then(resolve)
+            .catch(function(error) {
+                console.error(`\n${red('error: ')} Failed to download episode. Retrying in 3 seconds...`)
+                setTimeout(() => {
+                    resolve(downloadWithFancyProgressbarRecursive(url, text));
+                }, 3000)
+            })
+    });
+}
+
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
         fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
-            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
-                complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
-            })
-            const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
-            res.body.pipe(dest)
-
-            res.body.on('data', chunk => progress.tick(chunk.length))
-            res.body.on('end', resolve)
-            res.body.on('error', reject)
+            let totalSize = res.headers.get("content-length")
+            // before we go through the hassle of downloading the file, check if the file is already fully downloaded.
+            if(fs.existsSync(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)){
+                let fileStats = fs.statSync(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`);
+                // margin of error of 1%
+                if(fileStats.size >= (totalSize) - (totalSize*.01)){
+                    resolve();
+                }else{
+                    let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
+                        complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
+                    })
+                    const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
+                    res.body.pipe(dest)
+                    res.body.on('data', chunk => progress.tick(chunk.length))
+                    res.body.on('end', () => {
+                        // check to ensure the entire file was downloaded, with a margin of error of 1% to account for minor file size fluctuations 
+                        if(dest.bytesWritten >= (totalSize) - (totalSize*.01)){
+                            resolve();
+                        }else{
+                            reject();
+                        }
+                    })
+                    res.body.on('error', reject)
+                }
+            }
         }).catch(reject)
     })
 }
