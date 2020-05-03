@@ -126,30 +126,34 @@ function downloadWithFancyProgressbarRecursive(url, text) {
 function downloadWithFancyProgressbar(url, text){
     return new Promise((resolve,reject) => {
         fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
-            let totalSize = res.headers.get("content-length")
+            let totalSize = res.headers.get("content-length");
+            let fileExists = false;
             // before we go through the hassle of downloading the file, check if the file is already fully downloaded.
             if(fs.existsSync(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)){
                 let fileStats = fs.statSync(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`);
                 // margin of error of 1%
                 if(fileStats.size >= (totalSize) - (totalSize*.01)){
-                    resolve();
-                }else{
-                    let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
-                        complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
-                    })
-                    const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
-                    res.body.pipe(dest)
-                    res.body.on('data', chunk => progress.tick(chunk.length))
-                    res.body.on('end', () => {
-                        // check to ensure the entire file was downloaded, with a margin of error of 1% to account for minor file size fluctuations 
-                        if(dest.bytesWritten >= (totalSize) - (totalSize*.01)){
-                            resolve();
-                        }else{
-                            reject();
-                        }
-                    })
-                    res.body.on('error', reject)
+                    fileExists = true;
                 }
+            }
+            if(fileExists == false){
+                let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
+                    complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
+                })
+                const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
+                res.body.pipe(dest)
+                res.body.on('data', chunk => progress.tick(chunk.length))
+                res.body.on('end', () => {
+                    // check to ensure the entire file was downloaded, with a margin of error of 1% to account for minor file size fluctuations 
+                    if(dest.bytesWritten >= (totalSize) - (totalSize*.01)){
+                        resolve();
+                    }else{
+                        reject();
+                    }
+                })
+                res.body.on('error', reject)
+            }else{
+                resolve();
             }
         }).catch(reject)
     })
