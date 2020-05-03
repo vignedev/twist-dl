@@ -47,6 +47,7 @@ $ twist-dl -a "yuyushiki" -e 1-12             # Download everything from episode
 $ twist-dl -a "yuyushiki" -e 12 -o "./yyshk"  # Download 12th episode into "yyshk" folder
 $ twist-dl -a "yuyushiki" -e 1,3              # Download only the 1st and 3rd episode
 $ twist-dl -a "yuyushiki" -e 1,5-8            # Download 1st episode and episodes 5 to 8
+$ twist-dl -a "yuyushiki" -e *                # Download every episode
 $ twist-dl https://twist.moe/a/yuyushiki/12   # Download 12th episode
 ```
 
