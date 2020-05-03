@@ -1,5 +1,5 @@
 const
-    { red, yellow, cyan } = require('ansi-colors'),
+    { red, yellow, cyan, green } = require('ansi-colors'),
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
@@ -66,13 +66,18 @@ Options:
             name: 'episodes', message: `Select episodes: (${getTitle(selectedAnime)})`, /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
-        
+
         // use console.error so we don't write to stdout but stderr (in case of piping)
         console.error(`\n  ${cyan('twist-dl')} is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
         console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running!`)
         try{
             const donation = await getJSON('/api/donation')
-            console.error(`\n  They're ${red(Math.round((donation.remaining + Number.EPSILON)*100)/100 + '$ short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
+            const donationAmount = Math.round((donation.remaining + Number.EPSILON)*100)/100;
+            if(donationAmount >= 0){
+                console.error(`\n  They're ${red('$'+donationAmount + ' short')} on money this month.\n  To donate, please visit https://twist.moe/\n`)
+            }else{
+                console.error(`\n  They're ${green('$'+-donationAmount + ' over')} the donation goal this month.\n  To donate, please visit https://twist.moe/\n`)
+            }
         }catch(err){}
         console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
         ensureDirectoryExists(path.resolve(process.cwd(), argv.output || ''))
