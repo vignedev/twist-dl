@@ -66,7 +66,7 @@ Options:
             name: 'episodes', message: `Select episodes: (${getTitle(selectedAnime)})`, /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
-
+        
         // use console.error so we don't write to stdout but stderr (in case of piping)
         console.error(`\n  ${cyan('twist-dl')} is currently under developement, if any problems occur, please ${red('submit an issue')} on the GitHub's repo.`)
         console.error(`  ${red('Remember: ')} If you have some money to spare, donate it to twist.moe so they can the servers up and running!`)
@@ -170,10 +170,15 @@ function downloadAndPipeIntoStdout(url){
 }
 
 function getArrayOfEpisodes(source, input){
-    const rawEpisodes = input.split(',').map(x => parseRange(x.trim())).reduce((acc,val) => acc.concat(...val), [])
-    const uniqueEpisodes = uniqueArray(rawEpisodes.sort()).map(x => `Episode ${x}`)
-
-    return uniqueEpisodes.map(x => source[x])
+    let episodeArray;
+    if(input != "*"){
+        const rawEpisodes = input.split(',').map(x => parseRange(x.trim())).reduce((acc,val) => acc.concat(...val), [])
+        const uniqueEpisodes = uniqueArray(rawEpisodes.sort()).map(x => `Episode ${x}`)
+        episodeArray = uniqueEpisodes.map(x => source[x]);
+    }else{
+        episodeArray = Object.values(source);
+    }
+    return episodeArray;
 
     function parseRange(range){
         const [ start, end ] = range.split(`-`)
