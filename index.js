@@ -9,7 +9,7 @@ const
     path = require('path'),
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
-        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's', english: 'E'
+        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's', english: 'E', force: 'f'
     }})
     
 const
@@ -30,7 +30,8 @@ Options:
   -o, --output      Folder in which it'll be downloaded in, use - to output to stdout
   -h, --help        Displays this message
   -s, --silent      Suppress any (except of donation message) output
-  -E, --english     Search anime names using English titles`)
+  -E, --english     Search anime names using English titles
+  -f, --force       Always download, never restore broken downloads`)
     process.exit(1)
 }
 
@@ -81,7 +82,7 @@ Options:
                 if(argv.output == '-')
                     await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
                 else
-                    await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length}) [:bar] :rate/bps :percent :etas`)
+                    await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
             }catch(err){
                 console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
             }
@@ -111,12 +112,20 @@ function decryptSource(source){
     return aes.decrypt(source, aesKey).toString(crypto.enc.Utf8).trim()
 }
 function downloadWithFancyProgressbar(url, text){
-    return new Promise((resolve,reject) => {
-        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
-            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(text, {
+    const outputFile = path.join(path.resolve(process.cwd(), argv.output || ''), path.basename(url))
+    return new Promise(async (resolve,reject) => {
+        let size = argv.force ? 0 : await getStartRange(outputFile)
+        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` } }).then(res => {
+            if(parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
+                console.error(`${text} [skipped - already downloaded]`)
+                return resolve()
+            }
+            if(!res.ok) return reject(res.statusText)
+
+            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text} [:bar] :rate/bps :percent :etas`, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
-            const dest = fs.createWriteStream(`${path.resolve(process.cwd(), argv.output || '')}/${path.basename(url)}`)
+            const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
             res.body.pipe(dest)
 
             res.body.on('data', chunk => progress.tick(chunk.length))
@@ -166,4 +175,13 @@ function findCorrectAnime(animeList, anime){
 function ensureDirectoryExists(directory){
     if(!fs.existsSync(directory)) // for node versions below v10.12.0
     fs.mkdirSync(directory, { recursive: true })
+}
+
+function getStartRange(path){
+    return new Promise((resolve) => {
+        fs.stat(path, (err, stat) => {
+            if(err) return resolve(0)
+            return resolve(stat.size)
+        })
+    })
 }
