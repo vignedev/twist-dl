@@ -15,8 +15,8 @@ const
 const
     baseUrl = 'https://twist.moe',
     cdnUrl = 'https://twistcdn.bunny.sh',
-    aesKey = "LXgIVP&PorO68Rq7dTx8N^lP!Fa5sGJ^*XK",
-    accessToken = "1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR",
+    aesKey = 'LXgIVP&PorO68Rq7dTx8N^lP!Fa5sGJ^*XK',
+    accessToken = '1rj2vRtegS8Y60B3w3qNZm5T2Q0TN2NR',
     userAgent = `twist-dl/${require('./package.json').version}`,
     interactive = typeof (argv.anime) === typeof (argv.episode) || argv._.length == 0
 
