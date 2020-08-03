@@ -9,7 +9,9 @@ const
     path = require('path'),
     fs = require('fs'),
     argv = require('minimist')(process.argv.slice(2), {alias: {
-        anime: 'a', episode: 'e', output: 'o', help: 'h', silent: 's', english: 'E', force: 'f'
+        anime: 'a', episode: 'e', output: 'o',
+        help: 'h', silent: 's', english: 'E',
+        force: 'f', list: 'l'
     }})
     
 const
@@ -31,7 +33,8 @@ Options:
   -h, --help        Displays this message
   -s, --silent      Suppress any (except of donation message) output
   -E, --english     Search anime names using English titles
-  -f, --force       Always download, never restore broken downloads`)
+  -f, --force       Always download, never restore broken downloads
+  -l, --list        Except of downloading, pipe out a list of selected episodes`)
     process.exit(1)
 }
 
@@ -77,15 +80,20 @@ Options:
         }catch(err){}
         console.error(`  ${yellow(getTitle(selectedAnime))}\n`)
         ensureDirectoryExists(path.resolve(process.cwd(), argv.output || ''))
+
         for (let i = 0; i < pickedEpisodes.length; i++) {
-            try{
-                if(argv.output == '-')
-                    await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
-                else
-                    await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
-            }catch(err){
-                console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
-            }
+            if(argv.list){
+                process.stdout.write(cdnUrl + decryptSource(pickedEpisodes[i].source) + '\n')
+                process.stdout.end()
+            }else
+                try{
+                    if(argv.output == '-')
+                        await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
+                    else
+                        await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
+                }catch(err){
+                    console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
+                }
         }
     }catch(err){
         console.error(red('error: '), err)
