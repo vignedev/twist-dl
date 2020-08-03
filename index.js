@@ -84,7 +84,6 @@ Options:
         for (let i = 0; i < pickedEpisodes.length; i++) {
             if(argv.list){
                 process.stdout.write(cdnUrl + decryptSource(pickedEpisodes[i].source) + '\n')
-                process.stdout.end()
             }else
                 try{
                     if(argv.output == '-')
@@ -95,6 +94,7 @@ Options:
                     console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
                 }
         }
+        if(argv.list) process.stdout.end()
     }catch(err){
         console.error(red('error: '), err)
     }
