@@ -4,7 +4,8 @@ const
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
     url = require('url'),
-    { AutoComplete, MultiSelect } = require('enquirer'),
+    { AutoComplete } = require('enquirer'),
+    { AutoMoveMultiSelect } = require('./lib/AutoMoveMultiSelect')
     ProgressBar = require('progress'),
     path = require('path'),
     fs = require('fs'),
@@ -13,7 +14,7 @@ const
         help: 'h', silent: 's', english: 'E',
         force: 'f', list: 'l'
     }})
-    
+
 const
     baseUrl = 'https://twist.moe',
     cdnUrl = 'https://twistcdn.bunny.sh',
@@ -66,7 +67,7 @@ Options:
             
         if (!source && !interactive) throw new Error('Episode not available or series wasn\'t found.')
 
-        const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
+        const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new AutoMoveMultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: `Select episodes: (${getTitle(selectedAnime)})`, /*limit: 24,*/
             choices: Object.keys(sources)
         })).run()).map(x => sources[x])
