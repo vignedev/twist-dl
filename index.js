@@ -53,7 +53,8 @@ Options:
         const animeList = await getJSON('/api/anime')
         const selectedAnime = argv.anime ? findCorrectAnime(animeList, argv.anime.toLowerCase()) : await (new AutoComplete({
             name: 'anime', message: 'Pick your anime:', limit: 10,
-            choices: animeList.map(x => ({ name: getTitle(x), value: x }))
+            choices: animeList.map(x => ({ name: getTitle(x), value: x })),
+            stdout: process.stderr
         })).run()
 
         const sourceList = await getJSON(`/api/anime/${selectedAnime.slug.slug}/sources`)
@@ -68,7 +69,8 @@ Options:
 
         const pickedEpisodes = argv.episode ? (typeof(argv.episode) === 'string' && argv.episode != 'latest' ? getArrayOfEpisodes(sources, argv.episode) : [source]) : (await (new MultiSelect({ // Choices are broken, they don't read the value field, workaround present
             name: 'episodes', message: `Select episodes: (${getTitle(selectedAnime)})`, /*limit: 24,*/
-            choices: Object.keys(sources)
+            choices: Object.keys(sources),
+            stdout: process.stderr
         })).run()).map(x => sources[x])
 
         // use console.error so we don't write to stdout but stderr (in case of piping)
