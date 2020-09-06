@@ -125,8 +125,8 @@ function downloadWithFancyProgressbar(url, text){
     const outputFile = path.join(path.resolve(process.cwd(), argv.output || ''), path.basename(url))
     return new Promise(async (resolve,reject) => {
         let size = argv.force ? 0 : await getStartRange(outputFile)
-        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` } }).then(res => {
-            if(parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
+        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
+            if(res.headers.has('content-range') && parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
                 console.error(`${text} [skipped - already downloaded]`)
                 return resolve()
             }
