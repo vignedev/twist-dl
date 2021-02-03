@@ -16,7 +16,8 @@ const
     
 const
     baseUrl = 'https://twist.moe',
-    cdnUrl = 'https://twistcdn.bunny.sh',
+    activeCdnUrl = 'https://air-cdn.twist.moe',
+    cdnUrl = 'https://cdn.twist.moe',
     aesKey = '267041df55ca2b36f2e322d05ee2c9cf',
     accessToken = '0df14814b9e590a1f26d3071a4ed7974',
     userAgent = `twist-dl/${require('./package.json').version}`,
@@ -51,12 +52,13 @@ Options:
         }
 
         const animeList = await getJSON('/api/anime')
-        const selectedAnime = argv.anime ? findCorrectAnime(animeList, argv.anime.toLowerCase()) : await (new AutoComplete({
+        const selectedAnime = argv.anime ? findCorrectAnime(animeList, argv.anime.toString().toLowerCase()) : await (new AutoComplete({
             name: 'anime', message: 'Pick your anime:', limit: 10,
             choices: animeList.map(x => ({ name: getTitle(x), value: x })),
             stdout: process.stderr
         })).run()
 
+        const animeInfo = await getJSON(`/api/anime/${selectedAnime.slug.slug}`)
         const sourceList = await getJSON(`/api/anime/${selectedAnime.slug.slug}/sources`)
         const sources = sourceList.reduce((acc, val) => {
             acc[`Episode ${val.number}`] = val
@@ -84,14 +86,16 @@ Options:
         ensureDirectoryExists(path.resolve(process.cwd(), argv.output || ''))
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
+            const url = (animeInfo.ongoing ? activeCdnUrl : cdnUrl) + decryptSource(pickedEpisodes[i].source)
+
             if(argv.list){
-                process.stdout.write(cdnUrl + decryptSource(pickedEpisodes[i].source) + '\n')
+                process.stdout.write(url+ '\n')
             }else
                 try{
                     if(argv.output == '-')
-                        await downloadAndPipeIntoStdout(decryptSource(pickedEpisodes[i].source))
+                        await downloadAndPipeIntoStdout(url)
                     else
-                        await downloadWithFancyProgressbar(decryptSource(pickedEpisodes[i].source), `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
+                        await downloadWithFancyProgressbar(url, `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
                 }catch(err){
                     console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
                 }
@@ -125,7 +129,7 @@ function downloadWithFancyProgressbar(url, text){
     const outputFile = path.join(path.resolve(process.cwd(), argv.output || ''), path.basename(url))
     return new Promise(async (resolve,reject) => {
         let size = argv.force ? 0 : await getStartRange(outputFile)
-        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
+        fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
             if(res.headers.has('content-range') && parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
                 console.error(`${text} [skipped - already downloaded]`)
                 return resolve()
@@ -146,7 +150,7 @@ function downloadWithFancyProgressbar(url, text){
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetch(cdnUrl + url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
+        fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
             if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
             res.body.pipe(process.stdout)
             res.body.on('end', resolve)
