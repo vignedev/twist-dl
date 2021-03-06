@@ -11,7 +11,7 @@ const
     argv = require('minimist')(process.argv.slice(2), {alias: {
         anime: 'a', episode: 'e', output: 'o',
         help: 'h', silent: 's', english: 'E',
-        force: 'f', list: 'l'
+        force: 'f', list: 'l', version: 'v'
     }})
     
 const
@@ -35,8 +35,26 @@ Options:
   -s, --silent      Suppress any (except of donation message) output
   -E, --english     Search anime names using English titles
   -f, --force       Always download, never restore broken downloads
-  -l, --list        Instead of downloading, pipe out a list of selected episodes`)
+  -l, --list        Instead of downloading, pipe out a list of selected episodes
+  -v, --version     Display module versions`)
     process.exit(1)
+}
+
+if(argv.version){
+    try{
+        let modules = fs.readdirSync(__dirname + '/node_modules')
+        for(let _module of modules){
+            let version = ''
+            try{ version = require(`${__dirname}/node_modules/${_module}/package.json`).version }
+            catch(err){ version = null }
+            console.error(`${_module} - ${version ? yellow(version) : red('failed to retrieve')}`)
+        }
+        console.error(yellow(userAgent))
+    }catch(err){
+        console.error(red('Failed to list versions', err))
+        process.exit(1)
+    }
+    process.exit(0)
 }
 
 ;(async() => {
