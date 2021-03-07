@@ -3,6 +3,7 @@ const
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
+    fetchWrap = require('./lib/FetchWrapper'),
     url = require('url'),
     { AutoComplete, MultiSelect } = require('enquirer'),
     ProgressBar = require('progress'),
@@ -147,33 +148,36 @@ function downloadWithFancyProgressbar(url, text){
     const outputFile = path.join(path.resolve(process.cwd(), argv.output || ''), path.basename(url))
     return new Promise(async (resolve,reject) => {
         let size = argv.force ? 0 : await getStartRange(outputFile)
-        fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
-            if(res.headers.has('content-range') && parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
-                console.error(`${text} [skipped - already downloaded]`)
-                return resolve()
-            }
-            if(!res.ok) return reject(res.statusText)
+        const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
 
+        fetchWrap(url, {
+            headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` },
+            stream: dest,
+            received: size
+        }).then(controller => {
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text} [:bar] :rate/bps :percent :etas`, {
-                complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
+                complete: '=', incomplete: '.', width: 24, total: controller.length
             })
-            const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
-            res.body.pipe(dest)
-
-            res.body.on('data', chunk => progress.tick(chunk.length))
-            res.body.on('end', resolve)
-            res.body.on('error', reject)
-        }).catch(reject)
+            let ticker = progress.tick.bind(progress)
+            controller.once('finished', skipped => {
+                if(skipped) console.error(`${text} [skipped - already downloaded]`)
+                return resolve()
+            })
+            controller.on('error', reject)
+            controller.on('flow', ticker)
+        })
     })
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl } }).then(res => {
-            if(!res.ok) return reject(`Server responded with ${res.status} (${res.statusText})`)
-            res.body.pipe(process.stdout)
-            res.body.on('end', resolve)
-            res.body.on('error', reject)
-        }).catch(reject)
+        fetchWrap(url, {
+            headers: { 'user-agent': userAgent, 'referer': baseUrl },
+            received: 0,
+            stream: process.stdout
+        }).then(controller => {
+            controller.once('finished', resolve)
+            controller.on('error', reject)
+        })
     })
 }
 
