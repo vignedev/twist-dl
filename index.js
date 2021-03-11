@@ -3,7 +3,7 @@ const
     crypto = require('crypto-js'),  // Perhaps translate into nodev10 crypto?
     aes = require('crypto-js/aes'),
     fetch = require('node-fetch'),
-    fetchWrap = require('./lib/FetchWrapper'),
+    dlWrapper = require('./lib/NativeWrapper'),
     url = require('url'),
     { AutoComplete, MultiSelect } = require('enquirer'),
     ProgressBar = require('progress'),
@@ -106,18 +106,23 @@ if(argv.version){
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
             const url = (animeInfo.ongoing ? activeCdnUrl : cdnUrl) + decryptSource(pickedEpisodes[i].source)
-
+            let success = false
             if(argv.list){
                 process.stdout.write(url+ '\n')
-            }else
-                try{
-                    if(argv.output == '-')
-                        await downloadAndPipeIntoStdout(url)
-                    else
-                        await downloadWithFancyProgressbar(url, `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
-                }catch(err){
-                    console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
+            }else{
+                while(!success){
+                    try{
+                        if(argv.output == '-')
+                            await downloadAndPipeIntoStdout(url)
+                        else
+                            await downloadWithFancyProgressbar(url, `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
+                        success = true
+                    }catch(err){
+                        console.error(`\n${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i} (retrying in 5s)\n`,err)
+                    }
+                    await timeout(5000)
                 }
+            }
         }
         if(argv.list) process.stdout.end()
     }catch(err){
@@ -150,12 +155,12 @@ function downloadWithFancyProgressbar(url, text){
         let size = argv.force ? 0 : await getStartRange(outputFile)
         const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
 
-        fetchWrap(url, {
+        dlWrapper(url, {
             headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` },
             stream: dest,
             received: size
         }).then(controller => {
-            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text} [:bar] :rate/bps :percent :etas`, {
+            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text} ${size == 0 ? '' : '(continuation)'} [:bar] :rate/bps :percent :etas`, {
                 complete: '=', incomplete: '.', width: 24, total: controller.length
             })
             let ticker = progress.tick.bind(progress)
@@ -165,12 +170,12 @@ function downloadWithFancyProgressbar(url, text){
             })
             controller.on('error', reject)
             controller.on('flow', ticker)
-        })
+        }).catch(reject)
     })
 }
 function downloadAndPipeIntoStdout(url){
     return new Promise((resolve,reject) => {
-        fetchWrap(url, {
+        dlWrapper(url, {
             headers: { 'user-agent': userAgent, 'referer': baseUrl },
             received: 0,
             stream: process.stdout
@@ -220,4 +225,8 @@ function getStartRange(path){
             return resolve(stat.size)
         })
     })
+}
+
+function timeout(ms){
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
