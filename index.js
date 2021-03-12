@@ -101,7 +101,7 @@ Options:
                         success = true
                     }catch(err){
                         if(err.code == 'ERR_STREAM_PREMATURE_CLOSE') console.error(`\n${yellow('warning: ')} Download was prematurely ended, retrying in 5s`)
-                        else console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}, retrying in 5s\n`, err)
+                        else console.error(`\n${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}, retrying in 5s\n`, err)
                         await timeout(5000);
                     }
                 }
@@ -135,10 +135,12 @@ function downloadWithFancyProgressbar(url, text){
     const outputFile = path.join(path.resolve(process.cwd(), argv.output || ''), path.basename(url))
     return new Promise(async (resolve,reject) => {
         let size = argv.force ? 0 : await getStartRange(outputFile)
+        let timeout = null
         fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
             let total_size = 0
             if(res.headers.has('content-range') && (total_size = parseInt(res.headers.get('content-range').split('/').pop(), 10)) == size){
                 console.error(`${text} [skipped - already downloaded]`)
+                res.body.destroy()
                 return resolve()
             }
             if(!res.ok) return reject(res.statusText)
@@ -151,7 +153,15 @@ function downloadWithFancyProgressbar(url, text){
             const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
             res.body.pipe(dest)
 
-            res.body.on('data', chunk => progress.tick(chunk.length))
+            res.body.on('data', chunk => {
+                progress.tick(chunk.length)
+                clearTimeout(timeout) // kill the download after 30s and force a retry
+                timeout = setTimeout(() => {
+                    if(res.body.destroyed) return
+                    res.body.destroy()
+                    return reject(Error('Timed out'))
+                }, 30000)
+            })
             res.body.on('end', resolve)
             res.body.on('error', reject)
         }).catch(reject)
