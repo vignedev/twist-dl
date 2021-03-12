@@ -87,17 +87,23 @@ Options:
 
         for (let i = 0; i < pickedEpisodes.length; i++) {
             const url = (animeInfo.ongoing ? activeCdnUrl : cdnUrl) + decryptSource(pickedEpisodes[i].source)
+            let success = false
 
             if(argv.list){
                 process.stdout.write(url+ '\n')
             }else
-                try{
-                    if(argv.output == '-')
-                        await downloadAndPipeIntoStdout(url)
-                    else
-                        await downloadWithFancyProgressbar(url, `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
-                }catch(err){
-                    console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}\n`,err)
+                while(!success){
+                    try{
+                        if(argv.output == '-')
+                            await downloadAndPipeIntoStdout(url)
+                        else
+                            await downloadWithFancyProgressbar(url, `  Episode ${pickedEpisodes[i].number} (${i + 1}/${pickedEpisodes.length})`)
+                        success = true
+                    }catch(err){
+                        if(err.code == 'ERR_STREAM_PREMATURE_CLOSE') console.error(`\n${yellow('warning: ')} Download was prematurely ended, retrying in 5s`)
+                        else console.error(`${red('error: ')} Failed to download episode ${pickedEpisodes[i] ? pickedEpisodes[i].number : i}, retrying in 5s\n`, err)
+                        await timeout(5000);
+                    }
                 }
         }
         if(argv.list) process.stdout.end()
@@ -136,7 +142,7 @@ function downloadWithFancyProgressbar(url, text){
             }
             if(!res.ok) return reject(res.statusText)
 
-            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text} [:bar] :rate/bps :percent :etas`, {
+            let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text}${size != 0 ? ' [continuation]' : ''} [:bar] :rate/bps :percent :etas`, {
                 complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
             })
             const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
@@ -198,4 +204,8 @@ function getStartRange(path){
             return resolve(stat.size)
         })
     })
+}
+
+function timeout(ms){
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
