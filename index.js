@@ -136,15 +136,18 @@ function downloadWithFancyProgressbar(url, text){
     return new Promise(async (resolve,reject) => {
         let size = argv.force ? 0 : await getStartRange(outputFile)
         fetch(url, { headers: { 'user-agent': userAgent, 'referer': baseUrl, 'range': `bytes=${size}-` }, compress: false }).then(res => {
-            if(res.headers.has('content-range') && parseInt(res.headers.get('content-range').split('/').pop(), 10) == size){
+            let total_size = 0
+            if(res.headers.has('content-range') && (total_size = parseInt(res.headers.get('content-range').split('/').pop(), 10)) == size){
                 console.error(`${text} [skipped - already downloaded]`)
                 return resolve()
             }
             if(!res.ok) return reject(res.statusText)
+            if(!total_size || isNaN(total_size)) total_size = parseInt(res.headers.get('content-length'), 10)
 
             let progress = argv.silent ? { tick:()=>{/* stub */} } : new ProgressBar(`${text}${size != 0 ? ' [continuation]' : ''} [:bar] :rate/bps :percent :etas`, {
-                complete: '=', incomplete: '.', width: 24, total: parseInt(res.headers.get('content-length'))
+                complete: '=', incomplete: '.', width: 24, total: total_size
             })
+            progress.tick(size)
             const dest = fs.createWriteStream(outputFile, {flags: size == 0 ? 'w' : 'a', start: size})
             res.body.pipe(dest)
 
