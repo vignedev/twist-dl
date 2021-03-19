@@ -16,6 +16,7 @@
   "author": "vignedev",
   "license": "MIT",
   "dependencies": {
+    "ansi-colors": "^4.1.1",
     "crypto-js": "^3.3.0",
     "enquirer": "^2.3.4",
     "minimist": "^1.2.2",
