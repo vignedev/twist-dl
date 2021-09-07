@@ -90,8 +90,6 @@ Options:
                 (animeInfo.ongoing ? activeCdnUrl : cdnUrl) + decryptSource(pickedEpisodes[i].source)
             )
 
-            console.log('url: ' + url)
-
             if(argv.list){
                 process.stdout.write(url+ '\n')
             }else
