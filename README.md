@@ -1,6 +1,10 @@
 # twist-dl
 Simple twist.moe anime downloader
 
+## Archivation
+
+It seems that AnimeTwist's servers have gone down for quite a while now and I do not have the motivation to continue or support this project for quite some time now nor do I have a reason to do so anymore. Hence, this project is now archived most likely pernamently.
+
 ## Installation
 
 Install it via npm as a global module
@@ -54,7 +58,7 @@ $ twist-dl https://twist.moe/a/yuyushiki/12   # Download 12th episode
 
 ## Disclaimer
 
-twist-dl nor vignedev are **not** affiliated with twist.moe.
+twist-dl or vignedev are **not** affiliated with twist.moe.
 
 This program is made for personal-use only. If you like the program, please ***donate to the Twist.Moe admins*** so they can keep the servers up and running.
 
